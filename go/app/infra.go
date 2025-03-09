@@ -2,7 +2,10 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"os"
 	// STEP 5-1: uncomment this line
 	// _ "github.com/mattn/go-sqlite3"
 )
@@ -10,8 +13,9 @@ import (
 var errImageNotFound = errors.New("image not found")
 
 type Item struct {
-	ID   int    `db:"id" json:"-"`
-	Name string `db:"name" json:"name"`
+	ID       int    `db:"id" json:"-"`
+	Name     string `db:"name" json:"name"`
+	Category string `db:"category" json:"category"`
 }
 
 // Please run `go generate ./...` to generate the mock implementation
@@ -37,6 +41,38 @@ func NewItemRepository() ItemRepository {
 func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 	// STEP 4-1: add an implementation to store an item
 
+	var data struct {
+		Items []*Item `json:"items"`
+	}
+
+	oldData, err := os.ReadFile(i.fileName)
+	if err != nil && !os.IsNotExist(err) {
+		fmt.Println("Failed to read file:", err)
+		return fmt.Errorf("failed to read file: %w", err)
+	}
+
+	if len(oldData) > 0 {
+		if err := json.Unmarshal(oldData, &data); err != nil {
+			fmt.Println("Failed to unmarshal JSON:", err)
+			return fmt.Errorf("failed to unmarshal JSON: %w", err)
+		}
+	}
+
+	data.Items = append(data.Items, item)
+	fmt.Println("Updated data:", data)
+
+	newData, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		fmt.Println("Failed to marshal JSON:", err)
+		return fmt.Errorf("failed to marshal JSON: %w", err)
+	}
+
+	if err := os.WriteFile(i.fileName, newData, 0644); err != nil {
+		fmt.Println("Failed to write file:", err)
+		return fmt.Errorf("failed to write file: %w", err)
+	}
+
+	fmt.Println("Item successfully added")
 	return nil
 }
 
