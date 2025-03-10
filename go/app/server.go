@@ -228,6 +228,7 @@ func (s *Handlers) buildImagePath(imageFileName string) (string, error) {
 	}
 
 	// check if the image exists
+	//
 	_, err = os.Stat(imgPath)
 	if err != nil {
 		return imgPath, errImageNotFound
